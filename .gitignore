@@ -8,6 +8,13 @@ derelict-as.dll
 derelict-as.a
 derelict-as.lib
 derelict-as-test-*
+
+libderelict-as.so
+libderelict-as.dylib
+libderelict-as.dll
+libderelict-as.a
+libderelict-as.lib
+libderelict-as-test-*
 *.exe
 *.o
 *.obj

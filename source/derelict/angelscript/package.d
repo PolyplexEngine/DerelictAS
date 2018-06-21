@@ -129,7 +129,7 @@ enum asEObjTypeFlags {
 	asOBJ_APP_CLASS_ALIGN8           = (1<<19),
 	asOBJ_IMPLICIT_HANDLE            = (1<<20),
 	asOBJ_MASK_VALID_FLAGS           = 0x1FFFFF,
-	
+
 	asOBJ_SCRIPT_OBJECT              = (1<<21),
 	asOBJ_SHARED                     = (1<<22),
 	asOBJ_NOINHERIT                  = (1<<23),
@@ -164,6 +164,12 @@ enum asEBehaviours {
 	asBEHAVE_LAST_GC = asBEHAVE_RELEASEREFS,
 
 	asBEHAVE_MAX
+}
+
+enum asEMsgType {
+	asMSGTYPE_ERROR       = 0,
+	asMSGTYPE_WARNING     = 1,
+	asMSGTYPE_INFORMATION = 2
 }
 
 enum asEContextState {
@@ -253,6 +259,16 @@ alias asBYTE = ubyte;
 alias asWORD = ushort;
 alias asUINT = uint;
 alias asPWORD = size_t;
+static if ((void*).sizeof == long.sizeof) {
+	alias asDWORD = uint;
+	alias asQWORD = ulong;
+	alias asINT64 = long;
+} else {
+	alias asDWORD = ulong;
+	// TODO: Implement __GNUC__/__MWERKS__ from angelscript_c.h
+	// TODO: Implement else part of that.
+}
+
 
 struct asSMessageInfo {
 	const char *section;
@@ -260,6 +276,152 @@ struct asSMessageInfo {
 	int         col;
 	asEMsgType  type;
 	const char *message;
+}
+
+struct asIScriptEngine;
+struct asIScriptModule;
+struct asIScriptContext;
+struct asIScriptGeneric;
+struct asIScriptObject;
+struct asITypeInfo;
+struct asIScriptFunction;
+struct asIBinaryStream;
+struct asIJITCompiler;
+struct asIThreadManager;
+struct asILockableSharedBool;
+
+alias asBINARYREADFUNC_t = void function(void*, asUINT, void*);
+alias asBINARYWRITEFUNC_t = void function(const(void*), asUINT, void*);
+alias asFUNCTION_t = void function();
+alias asGENFUNC_t = void function(asIScriptGeneric*);
+alias asALLOCFUNC_t = void* function(size_t);
+alias asFREEFUNC_t = void function(void*);
+alias asCLEANENGINEFUNC_t = void function(asIScriptEngine*);
+alias asCLEANMODULEFUNC_t = void function(asIScriptModule*);
+alias asCLEANCONTEXTFUNC_t = void function(asIScriptContext*);
+alias asCLEANFUNCTIONFUNC_t = void function(asIScriptFunction*);
+alias asCLEANTYPEINFOFUNC_t = void function(asITypeInfo*);
+alias asCLEANSCRIPTOBJECTFUNC_t = void function(asIScriptObject*);
+alias asREQUESTCONTEXTFUNC_t = asIScriptContext* function(asIScriptEngine*, void*);
+alias asRETURNCONTEXTFUNC_t = void function(asIScriptEngine*, asIScriptContext*, void*);
+
+extern (C) @nogc nothrow {
+	// engine
+	alias da_asCreateScriptEngine = asIScriptEngine* function(asDWORD);
+	alias da_asGetLibraryVersion = const(char*) function();
+	alias da_asGetLibraryOptions = const(char*) function();
+
+	// context
+	alias da_asGetActiveContext = asIScriptContext* function();
+
+	// threading
+	alias da_asPrepareMultithread = int function(asIThreadManager*);
+	alias da_asUnprepareMultithread = void function();
+	alias da_asGetThreadManager = asIThreadManager* function();
+	alias da_asAquireExclusiveLock = void function();
+	alias da_asReleaseExclusiveLock = void function();
+	alias da_asAquireSharedLock = void function();
+	alias da_asReleaseSharedLock = void function();
+	alias da_asAtomicInc = int function(ref int);
+	alias da_asAtomicDec = int function(ref int);
+	alias da_asThreadCleanup = int function();
+
+	// memory managment
+	alias da_asSetGlobalMemoryFunctions = int function(asALLOCFUNC_t, asFREEFUNC_t);
+	alias da_asResetGlobalMemoryFunctions = int function();
+	alias da_asAllocMem = void* function(size_t);
+	alias da_asFreeMem = void function(void*);
+
+	// aux
+	alias da_asCreateLockableSharedBool = asILockableSharedBool* function();
+
+	// --- script engine
+
+	// memory managment
+	alias da_asEngine_AddRef = int function(asIScriptEngine*);
+	alias da_asEngine_Release = int function(asIScriptEngine*);
+	alias da_asEngine_ShutDownAndRelease = int function(asIScriptEngine*);
+
+	// engine properties
+	alias da_asEngine_SetEngineProperty = int function(asIScriptEngine*, asEEngineProp, asPWORD);
+	alias da_asEngine_GetEngineProperty = asPWORD function(asIScriptEngine*, asEEngineProp);
+
+	// compiler messages
+	alias da_asEngine_SetMessageCallback = int function(asIScriptEngine*, asFUNCTION_t, void*, asDWORD);
+	alias da_asEngine_ClearMessageCallback = int function(asIScriptEngine*);
+	alias da_asEngine_WriteMessage = int function(asIScriptEngine*, const(char*), int, int, asEMsgType, const(char*));
+
+	// jit compiler
+	alias da_asEngine_SetJITCompiler = int function(asIScriptEngine*, asIJITCompiler*);
+	alias da_asEngine_GetJITCompiler = asIJITCompiler* function(asIScriptEngine*);
+
+	// global functions
+	alias da_asEngine_RegisterGlobalFunction = int function(asIScriptEngine*, const(char*), asFUNCTION_t, asDWORD, void*);
+	alias da_asEngine_GetGlobalFuntionCount = asUINT function(asIScriptEngine*);
+	alias da_asEngine_GetGlobalFunctionByIndex = asIScriptFunction* function(asIScriptEngine*, asUINT);
+	alias da_asEngine_GetGlobalFunctionByDecl = asIScriptFunction* function(asIScriptEngine*, const(char*));
+
+	// global properties
+	/*
+		TODO: Define all functions
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+	alias da_asEngine_ = asUINT function(asIScriptEngine*,);
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+
+
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+
+
+
+	alias da_as = void function();*/
+}
+
+__gshared {
+	da_asCreateScriptEngine asCreateScriptEngine;
+	da_asGetLibraryVersion asGetLibraryVersion;
+	da_asGetLibraryOptions asGetLibraryOptions;
+
+	da_asGetActiveContext asGetActiveContext;
+
+	da_asPrepareMultithread asPrepareMultithread;
+	da_asUnprepareMultithread asUnprepareMultithread;
+	da_asGetThreadManager asGetThreadManager;
+	da_asAquireExclusiveLock asAquireExclusiveLock;
+	da_asReleaseExclusiveLock asReleaseExclusiveLock;
+	da_asAquireSharedLock asAquireSharedLock;
+	da_asReleaseSharedLock asReleaseSharedLock;
+	da_asAtomicInc asAtomicInc;
+	da_asAtomicDec asAtomicDec;
+	da_asThreadCleanup asThreadCleanup;
+
+	da_asSetGlobalMemoryFunctions asSetGlobalMemoryFunctions;
+	da_asResetGlobalMemoryFunctions asResetGlobalMemoryFunctions;
+	da_asAllocMem asAllocMem;
+	da_asFreeMem asFreeMem;
+
+	da_asCreateLockableSharedBool asCreateLockableSharedBool;
+
+	da_asEngine_AddRef asEngine_AddRef;
+	da_asEngine_Release asEngine_Release;
+	da_asEngine_ShutDownAndRelease asEngine_ShutDownAndRelease;
+
+	da_asEngine_SetEngineProperty asEngine_SetEngineProperty;
+	da_asEngine_GetEngineProperty asEngine_GetEngineProperty;
+
+	da_asEngine_SetMessageCallback asEngine_SetMessageCallback;
+	da_asEngine_ClearMessageCallback asEngine_ClearMessageCallback;
+	da_asEngine_WriteMessage asEngine_WriteMessage;
+
+	da_asEngine_SetJITCompiler asEngine_SetJITCompiler;
+	da_asEngine_GetJITCompiler asEngine_GetJITCompiler;
+
+	da_asEngine_RegisterGlobalFunction asEngine_RegisterGlobalFunction;
+	da_asEngine_GetGlobalFuntionCount asEngine_GetGlobalFuntionCount;
+	da_asEngine_GetGlobalFunctionByIndex asEngine_GetGlobalFunctionByIndex;
+	da_asEngine_GetGlobalFunctionByDecl asEngine_GetGlobalFunctionByDecl;
+
 }
 
 public class DerelictAngelscriptLoader : SharedLibLoader {
@@ -270,4 +432,46 @@ public class DerelictAngelscriptLoader : SharedLibLoader {
 	public this(string names) {
 		super(names);
 	}
+
+	protected override void loadSymbols() {
+		bindFunc(cast(void**)&asCreateScriptEngine, "asCreateScriptEngine");
+		bindFunc(cast(void**)&asGetLibraryVersion, "asGetLibraryVersion");
+		bindFunc(cast(void**)&asGetLibraryOptions, "asGetLibraryOptions");
+		bindFunc(cast(void**)&asGetActiveContext, "asGetActiveContext");
+		bindFunc(cast(void**)&asPrepareMultithread, "asPrepareMultithread");
+		bindFunc(cast(void**)&asUnprepareMultithread, "asUnprepareMultithread");
+		bindFunc(cast(void**)&asGetThreadManager, "asGetThreadManager");
+		bindFunc(cast(void**)&asAquireExclusiveLock, "asAquireExclusiveLock");
+		bindFunc(cast(void**)&asReleaseExclusiveLock, "asReleaseExclusiveLock");
+		bindFunc(cast(void**)&asAquireSharedLock, "asAquireSharedLock");
+		bindFunc(cast(void**)&asReleaseSharedLock, "asReleaseSharedLock");
+		bindFunc(cast(void**)&asAtomicInc, "asAtomicInc");
+		bindFunc(cast(void**)&asAtomicDec, "asAtomicDec");
+		bindFunc(cast(void**)&asThreadCleanup, "asThreadCleanup");
+		bindFunc(cast(void**)&asSetGlobalMemoryFunctions, "asSetGlobalMemoryFunctions");
+		bindFunc(cast(void**)&asResetGlobalMemoryFunctions, "asResetGlobalMemoryFunctions");
+		bindFunc(cast(void**)&asAllocMem, "asAllocMem");
+		bindFunc(cast(void**)&asFreeMem, "asFreeMem");
+		bindFunc(cast(void**)&asCreateLockableSharedBool, "asCreateLockableSharedBool");
+		bindFunc(cast(void**)&asEngine_AddRef, "asEngine_AddRef");
+		bindFunc(cast(void**)&asEngine_Release, "asEngine_Release");
+		bindFunc(cast(void**)&asEngine_ShutDownAndRelease, "asEngine_ShutDownAndRelease");
+		bindFunc(cast(void**)&asEngine_SetEngineProperty, "asEngine_SetEngineProperty");
+		bindFunc(cast(void**)&asEngine_GetEngineProperty, "asEngine_GetEngineProperty");
+		bindFunc(cast(void**)&asEngine_SetMessageCallback, "asEngine_SetMessageCallback");
+		bindFunc(cast(void**)&asEngine_ClearMessageCallback, "asEngine_ClearMessageCallback");
+		bindFunc(cast(void**)&asEngine_WriteMessage, "asEngine_WriteMessage");
+		bindFunc(cast(void**)&asEngine_SetJITCompiler, "asEngine_SetJITCompiler");
+		bindFunc(cast(void**)&asEngine_GetJITCompiler, "asEngine_GetJITCompiler");
+		bindFunc(cast(void**)&asEngine_RegisterGlobalFunction, "asEngine_RegisterGlobalFunction");
+		bindFunc(cast(void**)&asEngine_GetGlobalFuntionCount, "asEngine_GetGlobalFuntionCount");
+		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByIndex, "asEngine_GetGlobalFunctionByIndex");
+		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByDecl, "asEngine_GetGlobalFunctionByDecl");
+	}
+}
+
+__gshared DerelictAngelscriptLoader DerelictAngelscript;
+
+shared static this() {
+	DerelictAngelscript = new DerelictAngelscriptLoader();
 }
