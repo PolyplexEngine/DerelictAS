@@ -1,0 +1,12 @@
+{
+	"name": "derelict-as",
+	"authors": [
+		"Clipsey"
+	],
+	"dependencies": {
+		"derelict-util": "~>2.1.0"
+	},
+	"description": "Unofficial Derelict binding for Angelscript",
+	"copyright": "Copyright © 2018, Clipsey",
+	"license": "BSL-1"
+}
