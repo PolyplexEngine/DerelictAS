@@ -12,7 +12,7 @@ private {
 	else static if(Derelict_OS_Mac)
 		enum libNames = "libas_c.dylib";
 	else static if(Derelict_OS_Posix)
-		enum libNames = "libas_c.so";
+		enum libNames = "libas_c.so,/usr/local/lib/libas_c.so";
 	else
 		static assert(0, "Need to implement libangelscript libnames for this operating system.");
 	
@@ -119,7 +119,7 @@ __gshared {
 	da_asModule_GetFunctionByDecl asModule_GetFunctionByDecl;
 }
 
-public class DerelictAngelscriptLoader : SharedLibLoader {
+public class DerelictAngelscriptCLoader : SharedLibLoader {
 	public this() {
 		super(libNames);
 	}
@@ -155,8 +155,8 @@ public class DerelictAngelscriptLoader : SharedLibLoader {
 	}
 }
 
-__gshared DerelictAngelscriptLoader DerelictAngelscript;
+__gshared DerelictAngelscriptCLoader DerelictAngelscriptC;
 
 shared static this() {
-	DerelictAngelscript = new DerelictAngelscriptLoader();
+	DerelictAngelscriptC = new DerelictAngelscriptCLoader();
 }

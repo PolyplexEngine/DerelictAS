@@ -12,7 +12,7 @@ private {
 	else static if(Derelict_OS_Mac)
 		enum libNames = "libangelscript.dylib";
 	else static if(Derelict_OS_Posix)
-		enum libNames = "libangelscript.so";
+		enum libNames = "libangelscript.so,/usr/local/lib/libangelscript.so";
 	else
 		static assert(0, "Need to implement libangelscript libnames for this operating system.");
 
