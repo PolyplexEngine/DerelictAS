@@ -1,11 +1,11 @@
-module derelict.angelscript;
+module derelict.angelscript.ascpp;
+import derelict.angelscript.types;
 
 private {
 	import core.stdc.config;
 	import std.stdio;
 	import derelict.util.loader;
 	import derelict.util.system;
-	import derelict.angelscript;
 
 	static if(Derelict_OS_Windows)
 		enum libNames = "angelscript.dll";
@@ -15,6 +15,21 @@ private {
 		enum libNames = "libangelscript.so";
 	else
 		static assert(0, "Need to implement libangelscript libnames for this operating system.");
+
+	//Redfine the vtypes here, else it doesn't compile
+	alias asBYTE = ubyte;
+	alias asWORD = ushort;
+	alias asUINT = uint;
+	alias asPWORD = size_t;
+	static if ((void*).sizeof == long.sizeof) {
+		alias asDWORD = uint;
+		alias asQWORD = ulong;
+		alias asINT64 = long;
+	} else {
+		alias asDWORD = ulong;
+		// TODO: Implement __GNUC__/__MWERKS__ from angelscript_c.h
+		// TODO: Implement else part of that.
+	}
 }
 
 extern (C) @nogc nothrow {
@@ -30,9 +45,9 @@ extern (C) @nogc nothrow {
 	alias da_asPrepareMultithread = int function(asIThreadManager*);
 	alias da_asUnprepareMultithread = void function();
 	alias da_asGetThreadManager = asIThreadManager* function();
-	alias da_asAquireExclusiveLock = void function();
+	alias da_asAcquireExclusiveLock = void function();
 	alias da_asReleaseExclusiveLock = void function();
-	alias da_asAquireSharedLock = void function();
+	alias da_asAcquireSharedLock = void function();
 	alias da_asReleaseSharedLock = void function();
 	alias da_asAtomicInc = int function(ref int);
 	alias da_asAtomicDec = int function(ref int);
@@ -58,9 +73,9 @@ __gshared {
 	da_asPrepareMultithread asPrepareMultithread;
 	da_asUnprepareMultithread asUnprepareMultithread;
 	da_asGetThreadManager asGetThreadManager;
-	da_asAquireExclusiveLock asAquireExclusiveLock;
+	da_asAcquireExclusiveLock asAcquireExclusiveLock;
 	da_asReleaseExclusiveLock asReleaseExclusiveLock;
-	da_asAquireSharedLock asAquireSharedLock;
+	da_asAcquireSharedLock asAcquireSharedLock;
 	da_asReleaseSharedLock asReleaseSharedLock;
 	da_asAtomicInc asAtomicInc;
 	da_asAtomicDec asAtomicDec;
@@ -74,7 +89,7 @@ __gshared {
 	da_asCreateLockableSharedBool asCreateLockableSharedBool;
 }
 
-public class DerelictAngelscriptLoader : SharedLibLoader {
+public class DerelictAngelscriptCPPLoader : SharedLibLoader {
 	public this() {
 		super(libNames);
 	}
@@ -91,9 +106,9 @@ public class DerelictAngelscriptLoader : SharedLibLoader {
 		bindFunc(cast(void**)&asPrepareMultithread, "asPrepareMultithread");
 		bindFunc(cast(void**)&asUnprepareMultithread, "asUnprepareMultithread");
 		bindFunc(cast(void**)&asGetThreadManager, "asGetThreadManager");
-		bindFunc(cast(void**)&asAquireExclusiveLock, "asAquireExclusiveLock");
+		bindFunc(cast(void**)&asAcquireExclusiveLock, "asAcquireExclusiveLock");
 		bindFunc(cast(void**)&asReleaseExclusiveLock, "asReleaseExclusiveLock");
-		bindFunc(cast(void**)&asAquireSharedLock, "asAquireSharedLock");
+		bindFunc(cast(void**)&asAcquireSharedLock, "asAcquireSharedLock");
 		bindFunc(cast(void**)&asReleaseSharedLock, "asReleaseSharedLock");
 		bindFunc(cast(void**)&asAtomicInc, "asAtomicInc");
 		bindFunc(cast(void**)&asAtomicDec, "asAtomicDec");
@@ -106,8 +121,8 @@ public class DerelictAngelscriptLoader : SharedLibLoader {
 	}
 }
 
-__gshared DerelictAngelscriptCPPLoader DerelictAngelscript;
+__gshared DerelictAngelscriptCPPLoader DerelictAngelscriptCPP;
 
 shared static this() {
-	DerelictAngelscriptCPP = new DerelictAngelscriptLoader();
+	DerelictAngelscriptCPP = new DerelictAngelscriptCPPLoader();
 }

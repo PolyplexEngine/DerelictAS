@@ -1,11 +1,11 @@
-module derelict.angelscript;
+module derelict.angelscript.asc;
+import derelict.angelscript.types;
 
 private {
 	import core.stdc.config;
 	import std.stdio;
 	import derelict.util.loader;
 	import derelict.util.system;
-	import derelict.angelscript;
 
 	static if(Derelict_OS_Windows)
 		enum libNames = "as_c.dll";
@@ -15,6 +15,21 @@ private {
 		enum libNames = "libas_c.so";
 	else
 		static assert(0, "Need to implement libangelscript libnames for this operating system.");
+	
+	//Redfine the vtypes here, else it doesn't compile
+	alias asBYTE = ubyte;
+	alias asWORD = ushort;
+	alias asUINT = uint;
+	alias asPWORD = size_t;
+	static if ((void*).sizeof == long.sizeof) {
+		alias asDWORD = uint;
+		alias asQWORD = ulong;
+		alias asINT64 = long;
+	} else {
+		alias asDWORD = ulong;
+		// TODO: Implement __GNUC__/__MWERKS__ from angelscript_c.h
+		// TODO: Implement else part of that.
+	}
 }
 
 extern (C) @nogc nothrow {
@@ -40,9 +55,14 @@ extern (C) @nogc nothrow {
 
 	// global functions
 	alias da_asEngine_RegisterGlobalFunction = int function(asIScriptEngine*, const(char*), asFUNCTION_t, asDWORD, void*);
-	alias da_asEngine_GetGlobalFuntionCount = asUINT function(asIScriptEngine*);
+	alias da_asEngine_GetGlobalFunctionCount = asUINT function(asIScriptEngine*);
 	alias da_asEngine_GetGlobalFunctionByIndex = asIScriptFunction* function(asIScriptEngine*, asUINT);
 	alias da_asEngine_GetGlobalFunctionByDecl = asIScriptFunction* function(asIScriptEngine*, const(char*));
+
+
+
+
+	//alias da_asEngine_ExecuteString()
 
 	// global properties
 	/*
@@ -77,7 +97,7 @@ __gshared {
 	da_asEngine_GetJITCompiler asEngine_GetJITCompiler;
 
 	da_asEngine_RegisterGlobalFunction asEngine_RegisterGlobalFunction;
-	da_asEngine_GetGlobalFuntionCount asEngine_GetGlobalFuntionCount;
+	da_asEngine_GetGlobalFunctionCount asEngine_GetGlobalFunctionCount;
 	da_asEngine_GetGlobalFunctionByIndex asEngine_GetGlobalFunctionByIndex;
 	da_asEngine_GetGlobalFunctionByDecl asEngine_GetGlobalFunctionByDecl;
 
@@ -104,7 +124,7 @@ public class DerelictAngelscriptLoader : SharedLibLoader {
 		bindFunc(cast(void**)&asEngine_SetJITCompiler, "asEngine_SetJITCompiler");
 		bindFunc(cast(void**)&asEngine_GetJITCompiler, "asEngine_GetJITCompiler");
 		bindFunc(cast(void**)&asEngine_RegisterGlobalFunction, "asEngine_RegisterGlobalFunction");
-		bindFunc(cast(void**)&asEngine_GetGlobalFuntionCount, "asEngine_GetGlobalFuntionCount");
+		bindFunc(cast(void**)&asEngine_GetGlobalFunctionCount, "asEngine_GetGlobalFunctionCount");
 		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByIndex, "asEngine_GetGlobalFunctionByIndex");
 		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByDecl, "asEngine_GetGlobalFunctionByDecl");
 	}
