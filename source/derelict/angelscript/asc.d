@@ -59,9 +59,17 @@ extern (C) @nogc nothrow {
 	alias da_asEngine_GetGlobalFunctionByIndex = asIScriptFunction* function(asIScriptEngine*, asUINT);
 	alias da_asEngine_GetGlobalFunctionByDecl = asIScriptFunction* function(asIScriptEngine*, const(char*));
 
+	alias da_asEngine_CreateContext = asIScriptContext* function(asIScriptEngine*);
+	alias da_asEngine_GetModule = asIScriptModule* function(asIScriptEngine*, const(char*));
 
+	alias da_asContext_Release = int function(asIScriptContext*);
+	alias da_asContext_Prepare = int function(asIScriptContext*, asIScriptFunction*);
+	alias da_asContext_Execute = int function(asIScriptContext*);
+	
+	alias da_asModule_Release = int function(asIScriptModule*);
+	alias da_asModule_GetFunctionByDecl = asIScriptFunction* function(asIScriptModule*, const(char*));
 
-
+	alias da_asScript_Release = int function(asIScriptFunction*);
 	//alias da_asEngine_ExecuteString()
 
 	// global properties
@@ -101,6 +109,14 @@ __gshared {
 	da_asEngine_GetGlobalFunctionByIndex asEngine_GetGlobalFunctionByIndex;
 	da_asEngine_GetGlobalFunctionByDecl asEngine_GetGlobalFunctionByDecl;
 
+	da_asEngine_CreateContext asEngine_CreateContext;
+	da_asEngine_GetModule asEngine_GetModule;
+
+	da_asContext_Release asContext_Release;
+	da_asContext_Prepare asContext_Prepare;
+	da_asContext_Execute asContext_Execute;
+
+	da_asModule_GetFunctionByDecl asModule_GetFunctionByDecl;
 }
 
 public class DerelictAngelscriptLoader : SharedLibLoader {
@@ -127,6 +143,15 @@ public class DerelictAngelscriptLoader : SharedLibLoader {
 		bindFunc(cast(void**)&asEngine_GetGlobalFunctionCount, "asEngine_GetGlobalFunctionCount");
 		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByIndex, "asEngine_GetGlobalFunctionByIndex");
 		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByDecl, "asEngine_GetGlobalFunctionByDecl");
+
+		bindFunc(cast(void**)&asEngine_CreateContext, "asEngine_CreateContext");
+		bindFunc(cast(void**)&asEngine_GetModule, "asEngine_GetModule");
+
+		bindFunc(cast(void**)&asContext_Release, "asContext_Release");
+		bindFunc(cast(void**)&asContext_Prepare, "asContext_Prepare");
+		bindFunc(cast(void**)&asContext_Execute, "asContext_Execute");
+
+		bindFunc(cast(void**)&asModule_GetFunctionByDecl, "asModule_GetFunctionByDecl");
 	}
 }
 
