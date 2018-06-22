@@ -1,0 +1,117 @@
+module derelict.angelscript;
+
+private {
+	import core.stdc.config;
+	import std.stdio;
+	import derelict.util.loader;
+	import derelict.util.system;
+	import derelict.angelscript;
+
+	static if(Derelict_OS_Windows)
+		enum libNames = "as_c.dll";
+	else static if(Derelict_OS_Mac)
+		enum libNames = "libas_c.dylib";
+	else static if(Derelict_OS_Posix)
+		enum libNames = "libas_c.so";
+	else
+		static assert(0, "Need to implement libangelscript libnames for this operating system.");
+}
+
+extern (C) @nogc nothrow {
+	// --- script engine
+
+	// memory managment
+	alias da_asEngine_AddRef = int function(asIScriptEngine*);
+	alias da_asEngine_Release = int function(asIScriptEngine*);
+	alias da_asEngine_ShutDownAndRelease = int function(asIScriptEngine*);
+
+	// engine properties
+	alias da_asEngine_SetEngineProperty = int function(asIScriptEngine*, asEEngineProp, asPWORD);
+	alias da_asEngine_GetEngineProperty = asPWORD function(asIScriptEngine*, asEEngineProp);
+
+	// compiler messages
+	alias da_asEngine_SetMessageCallback = int function(asIScriptEngine*, asFUNCTION_t, void*, asDWORD);
+	alias da_asEngine_ClearMessageCallback = int function(asIScriptEngine*);
+	alias da_asEngine_WriteMessage = int function(asIScriptEngine*, const(char*), int, int, asEMsgType, const(char*));
+
+	// jit compiler
+	alias da_asEngine_SetJITCompiler = int function(asIScriptEngine*, asIJITCompiler*);
+	alias da_asEngine_GetJITCompiler = asIJITCompiler* function(asIScriptEngine*);
+
+	// global functions
+	alias da_asEngine_RegisterGlobalFunction = int function(asIScriptEngine*, const(char*), asFUNCTION_t, asDWORD, void*);
+	alias da_asEngine_GetGlobalFuntionCount = asUINT function(asIScriptEngine*);
+	alias da_asEngine_GetGlobalFunctionByIndex = asIScriptFunction* function(asIScriptEngine*, asUINT);
+	alias da_asEngine_GetGlobalFunctionByDecl = asIScriptFunction* function(asIScriptEngine*, const(char*));
+
+	// global properties
+	/*
+		TODO: Define all functions
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+	alias da_asEngine_ = asUINT function(asIScriptEngine*,);
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+
+
+	alias da_asEngine_ = int function(asIScriptEngine*,);
+
+
+
+	alias da_as = void function();*/
+}
+
+__gshared {
+	da_asEngine_AddRef asEngine_AddRef;
+	da_asEngine_Release asEngine_Release;
+	da_asEngine_ShutDownAndRelease asEngine_ShutDownAndRelease;
+
+	da_asEngine_SetEngineProperty asEngine_SetEngineProperty;
+	da_asEngine_GetEngineProperty asEngine_GetEngineProperty;
+
+	da_asEngine_SetMessageCallback asEngine_SetMessageCallback;
+	da_asEngine_ClearMessageCallback asEngine_ClearMessageCallback;
+	da_asEngine_WriteMessage asEngine_WriteMessage;
+
+	da_asEngine_SetJITCompiler asEngine_SetJITCompiler;
+	da_asEngine_GetJITCompiler asEngine_GetJITCompiler;
+
+	da_asEngine_RegisterGlobalFunction asEngine_RegisterGlobalFunction;
+	da_asEngine_GetGlobalFuntionCount asEngine_GetGlobalFuntionCount;
+	da_asEngine_GetGlobalFunctionByIndex asEngine_GetGlobalFunctionByIndex;
+	da_asEngine_GetGlobalFunctionByDecl asEngine_GetGlobalFunctionByDecl;
+
+}
+
+public class DerelictAngelscriptLoader : SharedLibLoader {
+	public this() {
+		super(libNames);
+	}
+
+	public this(string names) {
+		super(names);
+	}
+
+	protected override void loadSymbols() {
+		bindFunc(cast(void**)&asEngine_AddRef, "asEngine_AddRef");
+		bindFunc(cast(void**)&asEngine_Release, "asEngine_Release");
+		bindFunc(cast(void**)&asEngine_ShutDownAndRelease, "asEngine_ShutDownAndRelease");
+		bindFunc(cast(void**)&asEngine_SetEngineProperty, "asEngine_SetEngineProperty");
+		bindFunc(cast(void**)&asEngine_GetEngineProperty, "asEngine_GetEngineProperty");
+		bindFunc(cast(void**)&asEngine_SetMessageCallback, "asEngine_SetMessageCallback");
+		bindFunc(cast(void**)&asEngine_ClearMessageCallback, "asEngine_ClearMessageCallback");
+		bindFunc(cast(void**)&asEngine_WriteMessage, "asEngine_WriteMessage");
+		bindFunc(cast(void**)&asEngine_SetJITCompiler, "asEngine_SetJITCompiler");
+		bindFunc(cast(void**)&asEngine_GetJITCompiler, "asEngine_GetJITCompiler");
+		bindFunc(cast(void**)&asEngine_RegisterGlobalFunction, "asEngine_RegisterGlobalFunction");
+		bindFunc(cast(void**)&asEngine_GetGlobalFuntionCount, "asEngine_GetGlobalFuntionCount");
+		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByIndex, "asEngine_GetGlobalFunctionByIndex");
+		bindFunc(cast(void**)&asEngine_GetGlobalFunctionByDecl, "asEngine_GetGlobalFunctionByDecl");
+	}
+}
+
+__gshared DerelictAngelscriptLoader DerelictAngelscript;
+
+shared static this() {
+	DerelictAngelscript = new DerelictAngelscriptLoader();
+}
